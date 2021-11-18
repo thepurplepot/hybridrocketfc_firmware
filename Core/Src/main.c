@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,6 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define LOG_DELAY 200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -91,7 +92,8 @@ int main(void)
   MX_I2C1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-
+  char usbBuf[64];
+  uint32_t timerLog;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,6 +103,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if ( (HAL_GetTick() - timerLog) >= LOG_DELAY ) {
+	  uint8_t usbBufLen = snprintf( usbBuf, 64, "Testing!\r\n" );
+	  CDC_Transmit_FS( (uint8_t*) usbBuf, usbBufLen );
+	  timerLog += LOG_DELAY;
+	}
   }
   /* USER CODE END 3 */
 }
