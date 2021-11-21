@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "MPU9250.h"
 #include "usbd_cdc_if.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LOG_DELAY 200
+#define LOG_DELAY 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,7 +48,6 @@ I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 MPU9250 mpu;
-
 uint8_t mpuDataReady;
 /* USER CODE END PV */
 
@@ -64,7 +64,6 @@ static void MX_I2C1_Init(void);
 void HAL_GPIO_EXTI_Callback ( uint16_t GPIO_Pin ) {
 	if ( GPIO_Pin == MPU_INT_Pin ) {
 		mpuDataReady = 1;
-		GPIOC -> ODR ^= LED_Pin;
 	}
 }
 /* USER CODE END 0 */
@@ -100,28 +99,32 @@ int main(void)
   MX_I2C1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(100); //Allow MPU to power on
   MPU9250_Init(&mpu, &hi2c1);
-  char usbBuf[64];
+  char usbBuf[256];
   uint32_t timerLog;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  mpuDataReady = 1;
+  mpuDataReady = 0;
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if ( mpuDataReady ) {
+    if ( mpuDataReady || !HAL_GPIO_ReadPin(GPIOA, KEY_Pin) ) {
 	  MPU9250_ReadTemp( &mpu );
 	  MPU9250_ReadAccel( &mpu );
+	  MPU9250_ReadGyro( &mpu );
+	  MPU9250_ReadMag( &mpu );
 	  HAL_Delay(10);
+	  GPIOC -> ODR ^= LED_Pin;
 	  mpuDataReady = 0;
-	  MPU9250_ClearInt( &mpu );
 	}
     if ( (HAL_GetTick() - timerLog) >= LOG_DELAY ) {
-	  uint8_t usbBufLen = snprintf( usbBuf, 64, "Testing!\r\n" );
+	  uint8_t usbBufLen = snprintf( usbBuf, 256, "Temp: %.2f, Accel: %.2f %.2f %.2f, Gyro: %.2f %.2f %.2f, Mag: %.2f %.2f %.2f\r\n",
+			  mpu.temp_C, mpu.acc_mps2[0], mpu.acc_mps2[1], mpu.acc_mps2[2], mpu.gyro_dps[0], mpu.gyro_dps[1], mpu.gyro_dps[2], mpu.mag_mt[0], mpu.mag_mt[1], mpu.mag_mt[2] );
 	  CDC_Transmit_FS( (uint8_t*) usbBuf, usbBufLen );
 	  timerLog += LOG_DELAY;
 	}
@@ -188,7 +191,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.ClockSpeed = 100000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -242,6 +245,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(MPU_INT_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 

@@ -15,9 +15,10 @@
  * Defines
  */
 #define MPU9250_I2C_ADDR (0x68 << 1) //AD0 = 0 -> 0x68, AD0 = 1 -> 0x69 (p.32) (LSB is read/write bit)
-#define ASAX_I2C_ADDR    (0x0C << 1)
+#define AK8963_I2C_ADDR    (0x0C << 1)
 
 #define MPU9250_DEVICE_ID 0x71
+#define AK8963_DEVICE_ID  0x48
 
 /*
  * Registers
@@ -124,6 +125,27 @@
 #define MPU9250_ZA_OFFSET_H        0x7D
 #define MPU9250_ZA_OFFSET_L        0x7E
 
+
+#define AK8963_WIA   0x00
+#define AK8963_INFO  0x01
+#define AK8963_ST1   0x02
+#define AK8963_HXL   0x03
+#define AK8963_HXH   0x04
+#define AK8963_HYL   0x05
+#define AK8963_HYH   0x06
+#define AK8963_HZL   0x07
+#define AK8963_HZH   0x08
+#define AK8963_ST2   0x09
+#define AK8963_CNTL  0x0A
+#define AK8963_RSV   0x0B
+#define AK8963_ASTC  0x0C
+#define AK8963_TS1   0x0D
+#define AK8963_TS2   0x0E
+#define AK8963_I2CDI 0xF
+#define AK8963_ASAX  0x10
+#define AK8963_ASAY  0x11
+#define AK8963_ASAZ  0x12
+
 /*
  * Sensor struct
  */
@@ -132,8 +154,11 @@ typedef struct {
 	I2C_HandleTypeDef *i2cHandle;
 
 	float acc_mps2[3];
-
+	float gyro_dps[3];
+	float mag_mt[3];
 	float temp_C;
+
+	float mag_asa[3];
 } MPU9250;
 
 uint8_t MPU9250_Init (MPU9250 *dev, I2C_HandleTypeDef *i2cHandle);
@@ -141,8 +166,13 @@ uint8_t MPU9250_Init (MPU9250 *dev, I2C_HandleTypeDef *i2cHandle);
 HAL_StatusTypeDef MPU9250_ReadRegister (MPU9250 *dev, uint8_t reg, uint8_t *data);
 HAL_StatusTypeDef MPU9250_ReadRegisters (MPU9250 *dev, uint8_t reg, uint8_t *data, uint8_t length);
 HAL_StatusTypeDef MPU9250_WriteRegister (MPU9250 *dev, uint8_t reg, uint8_t *data);
+HAL_StatusTypeDef AK8963_ReadRegister (MPU9250 *dev, uint8_t reg, uint8_t *data);
+HAL_StatusTypeDef AK8963_ReadRegisters (MPU9250 *dev, uint8_t reg, uint8_t *data, uint8_t length);
+HAL_StatusTypeDef AK8963_WriteRegister (MPU9250 *dev, uint8_t reg, uint8_t *data);
 HAL_StatusTypeDef MPU9250_ClearInt ( MPU9250 *dev );
 HAL_StatusTypeDef MPU9250_ReadTemp (MPU9250 *dev);
 HAL_StatusTypeDef MPU9250_ReadAccel (MPU9250 *dev);
+HAL_StatusTypeDef MPU9250_ReadGyro (MPU9250 *dev);
+HAL_StatusTypeDef MPU9250_ReadMag (MPU9250 *dev);
 
 #endif

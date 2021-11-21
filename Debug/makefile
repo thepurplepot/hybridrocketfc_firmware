@@ -66,7 +66,7 @@ main-build: HybridRocketFC_Firmware_v0.1.elf secondary-outputs
 
 # Tool invocations
 HybridRocketFC_Firmware_v0.1.elf: $(OBJS) $(USER_OBJS) A:\Documents\stm32cUBEide\workspace\HybridRocketFC_Firmware_v0.1\STM32F411CEUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "HybridRocketFC_Firmware_v0.1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"A:\Documents\stm32cUBEide\workspace\HybridRocketFC_Firmware_v0.1\STM32F411CEUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HybridRocketFC_Firmware_v0.1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "HybridRocketFC_Firmware_v0.1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"A:\Documents\stm32cUBEide\workspace\HybridRocketFC_Firmware_v0.1\STM32F411CEUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="HybridRocketFC_Firmware_v0.1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
