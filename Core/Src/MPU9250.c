@@ -3,6 +3,12 @@
  *
  *  Created on: Nov 18, 2021
  *      Author: William FLetcher
+ *
+ *      ToDo:
+ *      -Mag. Calibration https://github.com/mindThomas/STM32-libraries/blob/master/Drivers/MPU9250/MPU9250.cpp    904
+ *      DMP Programming + Setup https://github.com/sparkfun/SparkFun_MPU-9250-DMP_Arduino_Library/blob/master/src/util/inv_mpu.c    2776
+ *      https://github.com/sparkfun/SparkFun_MPU-9250-DMP_Arduino_Library/blob/master/src/util/inv_mpu_dmp_motion_driver.c
+ *
  */
 
 #include "MPU9250.h"
@@ -130,9 +136,9 @@ HAL_StatusTypeDef MPU9250_ReadAccel ( MPU9250 *dev ) {
 	accelRawSigned[1] = (regData[2] << 8) | regData[3];
 	accelRawSigned[2] = (regData[4] << 8) | regData[5];
 	// Range +- 4G
-	dev->acc_mps2[0] = 9.81f * 0.000122070f * accelRawSigned[0];
-	dev->acc_mps2[1] = 9.81f * 0.000122070f * accelRawSigned[1];
-	dev->acc_mps2[2] = 9.81f * 0.000122070f * accelRawSigned[2];
+	dev->acc_mps2[0] = 9.81f * accelRawSigned[0] / 8192.0f;
+	dev->acc_mps2[1] = 9.81f * accelRawSigned[1] / 8192.0f;
+	dev->acc_mps2[2] = 9.81f * accelRawSigned[2] / 8192.0f;
 	return status;
 }
 
@@ -161,7 +167,7 @@ HAL_StatusTypeDef MPU9250_ReadMag ( MPU9250 *dev ) {
 			magRawSigned[1] = regData[2]  | (regData[3] << 8);
 			magRawSigned[2] = regData[4]  | (regData[5] << 8);
 			// Range +-
-			dev->mag_mt[0] = 0.1499f * dev->mag_asa[0] * magRawSigned[0];
+			dev->mag_mt[0] = 0.1499f * dev->mag_asa[0] * magRawSigned[0]; // 4912/32760 uT/tick
 			dev->mag_mt[1] = 0.1499f * dev->mag_asa[1] * magRawSigned[1];
 			dev->mag_mt[2] = 0.1499f * dev->mag_asa[2] * magRawSigned[2];
 		}

@@ -15,7 +15,19 @@
   *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
+  ******************************************************************************
+  ******************************************************************************
+  ******************************************************************************
+  * ToDo:
+  * Barmoeter
+  * High-G Accel.
+  * Altitude Calculation / estimation
+  * Apogee detection
+  * RTOS/DMA Investigation
+  * Data Logging
+  * Telemetry
   */
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -35,7 +47,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LOG_DELAY 1000
+#define LOG_DELAY 300
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -102,7 +114,7 @@ int main(void)
   HAL_Delay(100); //Allow MPU to power on
   MPU9250_Init(&mpu, &hi2c1);
   char usbBuf[256];
-  uint32_t timerLog;
+  uint32_t timerLog = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,7 +135,7 @@ int main(void)
 	  mpuDataReady = 0;
 	}
     if ( (HAL_GetTick() - timerLog) >= LOG_DELAY ) {
-	  uint8_t usbBufLen = snprintf( usbBuf, 256, "Temp: %.2f, Accel: %.2f %.2f %.2f, Gyro: %.2f %.2f %.2f, Mag: %.2f %.2f %.2f\r\n",
+	  uint8_t usbBufLen = snprintf( usbBuf, 256, "Temp: %.2f, Accel: %.2f, %.2f, %.2f, Gyro: %.2f, %.2f, %.2f, Mag: %.2f, %.2f, %.2f\r\n",
 			  mpu.temp_C, mpu.acc_mps2[0], mpu.acc_mps2[1], mpu.acc_mps2[2], mpu.gyro_dps[0], mpu.gyro_dps[1], mpu.gyro_dps[2], mpu.mag_mt[0], mpu.mag_mt[1], mpu.mag_mt[2] );
 	  CDC_Transmit_FS( (uint8_t*) usbBuf, usbBufLen );
 	  timerLog += LOG_DELAY;
