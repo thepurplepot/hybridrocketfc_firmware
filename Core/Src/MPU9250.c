@@ -265,13 +265,13 @@ uint8_t MPU9250_InitDMP( MPU9250 *dev ) {
 	/* Load DMP Firmware */
 	// AA3-AA6 {0x20 0x28, 0x30, 0x30}
 	regData = 0x0A; // Write starting at AA3
-	status = MPU9250_WriteRegister (dev, DMP_CTRL_1, &regData);
+	status = MPU9250_WriteRegister (dev, MPU9250_DMP_CTRL_1, &regData);
 	errNum += (status != HAL_OK);
 	regData = 0xA3; // Write starting at AA3
-	status = MPU9250_WriteRegister (dev, DMP_CTRL_2, &regData);
+	status = MPU9250_WriteRegister (dev, MPU9250_DMP_CTRL_2, &regData);
 	errNum += (status != HAL_OK);
 	regData = 0x20; // Enable 6-axis quaternion
-	status = MPU9250_WriteRegister (dev, DMP_CTRL_3, &regData);
+	status = MPU9250_WriteRegister (dev, MPU9250_DMP_CTRL_3, &regData);
 	errNum += (status != HAL_OK);
 	//FIRMWARE START VALUE
 

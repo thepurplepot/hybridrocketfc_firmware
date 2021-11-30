@@ -22,6 +22,7 @@
 
 /*
  * Registers
+ * https://invensense.tdk.com/wp-content/uploads/2015/02/RM-MPU-9250A-00-v1.6.pdf
  */
 
 #define MPU9250_SELF_TEST_X_GYRO   0x00
@@ -114,7 +115,14 @@
 #define MPU9250_USER_CTRL          0x6A
 #define MPU9250_PWR_MGMT_1         0x6B
 #define MPU9250_PWR_MGMT_2         0x6C
-// DMP Registers
+
+
+#define MPU9250_DMP_CTRL_1         0x6D
+#define MPU9250_DMP_CTRL_2         0x6E
+#define MPU9250_DMP_CTRL_3         0x6F
+#define MPU9250_FW_START_H         0x70
+#define MPU9250_FW_START_L         0x71
+
 
 #define MPU9250_FIFO_COUNTH        0x72
 #define MPU9250_FIFO_COUNTL        0x73
