@@ -6,6 +6,7 @@
  *
  *      ToDo:
  *      -Mag. Calibration https://github.com/mindThomas/STM32-libraries/blob/master/Drivers/MPU9250/MPU9250.cpp    904
+ *      https://github.com/kriswiner/MPU6050/wiki/Simple-and-Effective-Magnetometer-Calibration
  *      DMP Programming + Setup https://github.com/sparkfun/SparkFun_MPU-9250-DMP_Arduino_Library/blob/master/src/util/inv_mpu.c    2776
  *      https://github.com/sparkfun/SparkFun_MPU-9250-DMP_Arduino_Library/blob/master/src/util/inv_mpu_dmp_motion_driver.c
  *
@@ -170,7 +171,129 @@ HAL_StatusTypeDef MPU9250_ReadMag ( MPU9250 *dev ) {
 			dev->mag_mt[0] = 0.1499f * dev->mag_asa[0] * magRawSigned[0]; // 4912/32760 uT/tick
 			dev->mag_mt[1] = 0.1499f * dev->mag_asa[1] * magRawSigned[1];
 			dev->mag_mt[2] = 0.1499f * dev->mag_asa[2] * magRawSigned[2];
+			//Include calibration values somehow (subtract bias, multiply by scale);
 		}
 	}
 	return status;
+}
+
+HAL_StatusTypeDef MPU9250_CalMag (MPU9250 *dev) {
+	// https://github.com/mindThomas/STM32-libraries/blob/master/Drivers/MPU9250/MPU9250.cpp
+	//FLT_MIN         = 1.175494e-38
+	//FLT_MAX         = 3.402823e+38
+	float mag_bias[3] = { 0, 0, 0 }, mag_scale[3] = { 0, 0, 0 };
+	float mag_max[3] = { FLT_MIN, FLT_MIN, FLT_MIN }, mag_min[3] = { FLT_MAX, FLT_MAX, FLT_MAX };
+	HAL_StatusTypeDef status;
+
+	// Wave device in figure of eight during this process
+
+	//Determin max and min outputs during wave
+	uint16_t sample_count = 1500; //15 seconds of data at 100Hz
+	for(uint16_t ii = 0; ii < sample_count; ii++){
+		status = MPU9250_ReadMag ( MPU9250 *dev );
+		for(uint16_t jj = 0; jj < 3; j++){
+			if (dev->mag_mt[jj] > mag_max[jj]) mag_max[jj] = dev->mag_mt[jj];
+			if (dev->mag_mt[jj] < mag_min[jj]) mag_min[jj] = dev->mag_mt[jj];
+		}
+
+		HAL_Delay(12);
+	}
+
+	// Hard Iron correction
+	mag_bias[0] = (mag_max[0] + mag_min[0]) / 2;
+	mag_bias[1] = (mag_max[1] + mag_min[1]) / 2;
+	mag_bias[2] = (mag_max[2] + mag_min[2]) / 2;
+
+	// Soft iron correction
+	mag_scale[0] = (mag_max[0] - mag_min[0]) / 2;
+	mag_scale[1] = (mag_max[1] - mag_min[1]) / 2;
+	mag_scale[2] = (mag_max[2] - mag_min[2]) / 2;
+
+	float avg_scale = (mag_scale[0] + mag_scale[1] + mag_scale[2]) / 3;
+	mag_scale[0] = avg_scale / mag_scale[0];
+	mag_scale[1] = avg_scale / mag_scale[1];
+	mag_scale[2] = avg_scale / mag_scale[2];
+
+	//dev->mag_bias[0] = mag_bias[0]; something like this
+
+	return status;
+	//Output bias and scale arrays to be used when reading mag data.
+}
+
+
+// DMP
+uint8_t MPU9250_InitDMP( MPU9250 *dev ) {
+	// https://github.com/kriswiner/MPU9250/blob/master/Documents/Application%20Note%20-%20Programming%20Sequence%20for%20DMP%20Hardware%20Functions%20v12%20(....pdf
+	/* Reset chip */
+	regData = 0x80; // SLEEP = 1 (p. 40)
+	status = MPU9250_WriteRegister (dev, MPU9250_PWR_MGMT_1, &regData);
+	errNum += (status != HAL_OK);
+	HAL_Delay(100);
+	/* Wake up chip / Configure Power Management */
+	regData = 0x6B;
+	status = MPU9250_WriteRegister (dev, MPU9250_PWR_MGMT_1, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x6C;
+	status = MPU9250_WriteRegister (dev, MPU9250_PWR_MGMT_2, &regData);
+	errNum += (status != HAL_OK);
+	/* Configure Gyro. */
+	regData = 0x03; // 42Hz LPF
+	status = MPU9250_WriteRegister (dev, MPU9250_CONFIG, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x18; // +-2000dps FSR
+	status = MPU9250_WriteRegister (dev, MPU9250_GYRO_CONFIG, &regData);
+	errNum += (status != HAL_OK);
+	/* Configure Accel. */
+	regData = 0x08; // +-4g FSR
+	status = MPU9250_WriteRegister (dev, MPU9250_ACCEL_CONFIG, &regData);
+	errNum += (status != HAL_OK);
+	/* Configure FIFO / Interupts */
+	regData = 0x00; // Defers FIFO control to DMP
+	status = MPU9250_WriteRegister (dev, MPU9250_FIFO_EN, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x00; // Defers interupt control to DMP
+	status = MPU9250_WriteRegister (dev, MPU9250_INT_ENABLE, &regData);
+	errNum += (status != HAL_OK);
+	/* Reset FIFO */
+	regData = 0x04;
+	status = MPU9250_WriteRegister (dev, MPU9250_USER_CTRL, &regData);
+	errNum += (status != HAL_OK);
+	/* Configure Sample Rate */
+	regData = 0x04; // 200Hz
+	status = MPU9250_WriteRegister (dev, MPU9250_SMPLRT_DIV, &regData);
+	errNum += (status != HAL_OK);
+	/* Load DMP Firmware */
+	// AA3-AA6 {0x20 0x28, 0x30, 0x30}
+	regData = 0x0A; // Write starting at AA3
+	status = MPU9250_WriteRegister (dev, DMP_CTRL_1, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0xA3; // Write starting at AA3
+	status = MPU9250_WriteRegister (dev, DMP_CTRL_2, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x20; // Enable 6-axis quaternion
+	status = MPU9250_WriteRegister (dev, DMP_CTRL_3, &regData);
+	errNum += (status != HAL_OK);
+	//FIRMWARE START VALUE
+
+	/* Start DMP */
+	regData = 0x40;
+	status = MPU9250_WriteRegister (dev, MPU9250_USER_CTRL, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x04;
+	status = MPU9250_WriteRegister (dev, MPU9250_USER_CTRL, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x80;
+	status = MPU9250_WriteRegister (dev, MPU9250_USER_CTRL, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x08;
+	status = MPU9250_WriteRegister (dev, MPU9250_USER_CTRL, &regData);
+	errNum += (status != HAL_OK);
+	regData = 0x02;
+	status = MPU9250_WriteRegister (dev, MPU9250_INT_ENABLE, &regData);
+	errNum += (status != HAL_OK);
+
+
+
+	return errNum;
+
 }

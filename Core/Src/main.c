@@ -126,10 +126,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     if ( mpuDataReady || !HAL_GPIO_ReadPin(GPIOA, KEY_Pin) ) {
+    	//Check INT_STATUS reg. for DMP or Raw data (0x02 = DMP)
 	  MPU9250_ReadTemp( &mpu );
 	  MPU9250_ReadAccel( &mpu );
 	  MPU9250_ReadGyro( &mpu );
 	  MPU9250_ReadMag( &mpu );
+
+	  //If from DMP then read from FIFO
 	  HAL_Delay(10);
 	  GPIOC -> ODR ^= LED_Pin;
 	  mpuDataReady = 0;
