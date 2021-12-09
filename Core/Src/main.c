@@ -126,20 +126,28 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     if ( mpuDataReady || !HAL_GPIO_ReadPin(GPIOA, KEY_Pin) ) {
-    	//Check INT_STATUS reg. for DMP or Raw data (0x02 = DMP)
-	  MPU9250_ReadTemp( &mpu );
-	  MPU9250_ReadAccel( &mpu );
-	  MPU9250_ReadGyro( &mpu );
-	  MPU9250_ReadMag( &mpu );
-
-	  //If from DMP then read from FIFO
-	  HAL_Delay(10);
-	  GPIOC -> ODR ^= LED_Pin;
-	  mpuDataReady = 0;
+		//Check INT_STATUS reg. for DMP or Raw data (0x02 = DMP)
+		uint8_t regData;
+		MPU9250_ReadRegister (&mpu, MPU9250_INT_STATUS, &regData);
+		if ( regData == 0x02 ) {
+			//Data from DMP, read from FIFO into quaternion
+			MPU9250_ReadFIFO( &mpu );
+		} else {
+			MPU9250_ReadTemp( &mpu );
+			MPU9250_ReadAccel( &mpu );
+			MPU9250_ReadGyro( &mpu );
+			MPU9250_ReadMag( &mpu );
+		}
+		HAL_Delay(10);
+		GPIOC -> ODR ^= LED_Pin;
+		mpuDataReady = 0;
 	}
     if ( (HAL_GetTick() - timerLog) >= LOG_DELAY ) {
-	  uint8_t usbBufLen = snprintf( usbBuf, 256, "Temp: %.2f, Accel: %.2f, %.2f, %.2f, Gyro: %.2f, %.2f, %.2f, Mag: %.2f, %.2f, %.2f\r\n",
-			  mpu.temp_C, mpu.acc_mps2[0], mpu.acc_mps2[1], mpu.acc_mps2[2], mpu.gyro_dps[0], mpu.gyro_dps[1], mpu.gyro_dps[2], mpu.mag_mt[0], mpu.mag_mt[1], mpu.mag_mt[2] );
+      uint8_t usbBufLen;
+	  //usbBufLen = snprintf( usbBuf, 256, "Temp: %.2f, Accel: %.2f, %.2f, %.2f, Gyro: %.2f, %.2f, %.2f, Mag: %.2f, %.2f, %.2f\r\n",
+			  //mpu.temp_C, mpu.acc_mps2[0], mpu.acc_mps2[1], mpu.acc_mps2[2], mpu.gyro_dps[0], mpu.gyro_dps[1], mpu.gyro_dps[2], mpu.mag_mt[0], mpu.mag_mt[1], mpu.mag_mt[2] );
+	  usbBufLen = snprintf( usbBuf, 256, "%d, %d, %d, %d\r\n",
+	  			  mpu.quat[0], mpu.quat[1], mpu.quat[2], mpu.quat[3]);
 	  CDC_Transmit_FS( (uint8_t*) usbBuf, usbBufLen );
 	  timerLog += LOG_DELAY;
 	}

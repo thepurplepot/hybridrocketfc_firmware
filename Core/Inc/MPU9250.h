@@ -20,6 +20,9 @@
 #define MPU9250_DEVICE_ID 0x71
 #define AK8963_DEVICE_ID  0x48
 
+#define FLT_MAX 4.402E38
+#define FLT_MIN 1.175E-38
+
 /*
  * Registers
  * https://invensense.tdk.com/wp-content/uploads/2015/02/RM-MPU-9250A-00-v1.6.pdf
@@ -167,6 +170,7 @@ typedef struct {
 	float gyro_dps[3];
 	float mag_mt[3];
 	float temp_C;
+	long quat[4];
 
 	float mag_asa[3];
 } MPU9250;
@@ -191,5 +195,6 @@ HAL_StatusTypeDef MPU9250_CalMag (MPU9250 *dev);
 
 
 uint8_t MPU9250_InitDMP( MPU9250 *dev );
+HAL_StatusTypeDef MPU9250_ReadFIFO (MPU9250 *dev);
 
 #endif

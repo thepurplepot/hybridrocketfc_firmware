@@ -50,6 +50,10 @@ uint8_t MPU9250_Init (MPU9250 *dev, I2C_HandleTypeDef *i2cHandle) {
 
 	dev->temp_C = 0.0f;
 
+	dev->quat[0] = 0;
+	dev->quat[1] = 0;
+	dev->quat[2] = 0;
+
 	uint8_t errNum = 0;
 	HAL_StatusTypeDef status;
 
@@ -190,8 +194,8 @@ HAL_StatusTypeDef MPU9250_CalMag (MPU9250 *dev) {
 	//Determin max and min outputs during wave
 	uint16_t sample_count = 1500; //15 seconds of data at 100Hz
 	for(uint16_t ii = 0; ii < sample_count; ii++){
-		status = MPU9250_ReadMag ( MPU9250 *dev );
-		for(uint16_t jj = 0; jj < 3; j++){
+		status = MPU9250_ReadMag ( dev );
+		for(uint16_t jj = 0; jj < 3; jj++){
 			if (dev->mag_mt[jj] > mag_max[jj]) mag_max[jj] = dev->mag_mt[jj];
 			if (dev->mag_mt[jj] < mag_min[jj]) mag_min[jj] = dev->mag_mt[jj];
 		}
@@ -223,8 +227,13 @@ HAL_StatusTypeDef MPU9250_CalMag (MPU9250 *dev) {
 
 // DMP
 uint8_t MPU9250_InitDMP( MPU9250 *dev ) {
+	uint8_t errNum = 0;
+	HAL_StatusTypeDef status;
+
+
 	// https://github.com/kriswiner/MPU9250/blob/master/Documents/Application%20Note%20-%20Programming%20Sequence%20for%20DMP%20Hardware%20Functions%20v12%20(....pdf
 	/* Reset chip */
+	uint8_t regData;
 	regData = 0x80; // SLEEP = 1 (p. 40)
 	status = MPU9250_WriteRegister (dev, MPU9250_PWR_MGMT_1, &regData);
 	errNum += (status != HAL_OK);
@@ -295,5 +304,23 @@ uint8_t MPU9250_InitDMP( MPU9250 *dev ) {
 
 
 	return errNum;
+}
 
+HAL_StatusTypeDef MPU9250_ReadFIFO ( MPU9250 *dev) {
+	uint8_t regData[16]; //16 bytes for 6-Axis Quaternion
+	uint8_t fifo_count, index = 0;
+	HAL_StatusTypeDef status;
+
+	status = MPU9250_ReadRegisters (dev, MPU9250_FIFO_COUNTH, regData, 2);
+	fifo_count = (regData[0] << 8) | regData[1];
+	//Maybe check for overflow and reset?
+	status = MPU9250_ReadRegisters (dev, MPU9250_FIFO_R_W, regData, 16);
+	//Parse regData into 4 quaternion values 4-bytes each
+	//long quat[4];
+	dev->quat[0] = (long)regData[0]<<24  |  (long)regData[1]<<16  |  (long)regData[2]<<8  |  (long)regData[3];
+	dev->quat[1] = (long)regData[4]<<24  |  (long)regData[5]<<16  |  (long)regData[6]<<8  |  (long)regData[7];
+	dev->quat[2] = (long)regData[8]<<24  |  (long)regData[9]<<16  |  (long)regData[10]<<8  |  (long)regData[11];
+	dev->quat[3] = (long)regData[12]<<24  |  (long)regData[13]<<16  |  (long)regData[14]<<8  |  (long)regData[15];
+
+	return status;
 }
