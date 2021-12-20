@@ -50,6 +50,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -62,9 +64,32 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 #define KEY_Pin GPIO_PIN_0
 #define KEY_GPIO_Port GPIOA
+#define AUX2_Pin GPIO_PIN_1
+#define AUX2_GPIO_Port GPIOA
+#define AUX3_Pin GPIO_PIN_2
+#define AUX3_GPIO_Port GPIOA
+#define BUZZER_Pin GPIO_PIN_4
+#define BUZZER_GPIO_Port GPIOA
+#define SD_CS_Pin GPIO_PIN_0
+#define SD_CS_GPIO_Port GPIOB
+#define FLASH_CS_Pin GPIO_PIN_1
+#define FLASH_CS_GPIO_Port GPIOB
+#define RADIO_CS_Pin GPIO_PIN_2
+#define RADIO_CS_GPIO_Port GPIOB
+#define AUX1_Pin GPIO_PIN_15
+#define AUX1_GPIO_Port GPIOA
+#define PYRO3_Pin GPIO_PIN_3
+#define PYRO3_GPIO_Port GPIOB
+#define PYRO2_Pin GPIO_PIN_4
+#define PYRO2_GPIO_Port GPIOB
+#define PYRO1_Pin GPIO_PIN_5
+#define PYRO1_GPIO_Port GPIOB
 #define MPU_INT_Pin GPIO_PIN_8
 #define MPU_INT_GPIO_Port GPIOB
 #define MPU_INT_EXTI_IRQn EXTI9_5_IRQn
+#define ACC_INT_Pin GPIO_PIN_9
+#define ACC_INT_GPIO_Port GPIOB
+#define ACC_INT_EXTI_IRQn EXTI9_5_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
